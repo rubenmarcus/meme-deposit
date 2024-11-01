@@ -6,6 +6,17 @@ dotenv.config(); // Load environment variables
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = parseInt(process.env.TELEGRAM_CHAT_ID || "", 10);
 
+interface TelegramUpdate {
+  message?: {
+    chat?: {
+      id?: number;
+    };
+    photo?: {
+      file_id: string;
+    }[];
+  };
+}
+
 async function fetchTelegramUpdates(): Promise<Update[]> {
   const response = await fetch(
     `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates`
@@ -22,12 +33,14 @@ async function fetchImagesFromTelegram(): Promise<string[]> {
 
   const images = updates
     .filter(
-      (update: any) =>
+      (update: TelegramUpdate) =>
         update?.message?.chat?.id === TELEGRAM_CHAT_ID &&
+        update?.message?.photo &&
         update?.message?.photo?.length > 0
     )
-    .flatMap((update: any) => {
-      const lastPhoto = update.message.photo.slice(-1)[0]; // Get the last photo
+    .flatMap((update: TelegramUpdate) => {
+      const lastPhoto =
+        update?.message?.photo && update.message.photo.slice(-1)[0]; // Get the last photo
       if (lastPhoto && !seenFileIds.has(lastPhoto.file_id)) {
         seenFileIds.add(lastPhoto.file_id); // Add to seen set
         return [lastPhoto.file_id]; // Return an array with the last photo's file_id
@@ -36,7 +49,7 @@ async function fetchImagesFromTelegram(): Promise<string[]> {
     })
     .reverse();
 
-  console.log("Sfhjdghfjsk2223j2kj23j3k2j3k2jk3dh", images);
+  // console.log("Sfhjdghfjsk2223j2kj23j3k2j3k2jk3dh", images);
 
   return images;
 }
@@ -53,7 +66,7 @@ async function getFileUrl(fileId: string) {
   return `https://api.telegram.org/file/bot${TELEGRAM_BOT_TOKEN}/${filePath}`;
 }
 
-export async function fetchImageUrls() {
+async function fetchImageUrls() {
   const images = await fetchImagesFromTelegram();
   console.log({ images });
   const imageUrls = await Promise.all(
@@ -66,8 +79,7 @@ export async function fetchImageUrls() {
   console.log({ imageUrls });
   return imageUrls;
 }
-
-export async function GET(_req: NextRequest): Promise<NextResponse> {
+export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
     const images = await fetchImageUrls();
 
