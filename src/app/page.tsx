@@ -1,31 +1,14 @@
 import Head from "next/head";
-import MemeGallery from "./components/MemeGallery";
+import MemeGallery from "../components/MemeGallery";
+import { fetchImageUrls } from "@/data/fetchTelegram";
+
+
+
 
 const Home = async () => {
-  let images: string[] = [];
+  const res = await fetchImageUrls();
 
-  try {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_BASE_URL}api/meme-images`,
-      {
-        cache: "no-store", // Ensures fresh data on every request
-      }
-    );
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const text = await response.text();
-    if (!text) {
-      throw new Error("Response body is empty");
-    }
-
-    images = JSON.parse(text);
-  } catch (error) {
-    console.error("Error fetching images:", error);
-    images = []; // Return an empty array in case of error
-  }
 
   return (
     <div>
@@ -44,7 +27,7 @@ const Home = async () => {
           <img src="/illia.gif" alt="GIF" className="w-24 h-24" />
         </div>
 
-        <MemeGallery images={images} />
+        <MemeGallery images={res} />
       </main>
     </div>
   );
